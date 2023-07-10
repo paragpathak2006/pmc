@@ -1,6 +1,3 @@
-// invetory_problem.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -9,25 +6,28 @@ using namespace std;
 
 int next(const int& i) {
     if (i == 2) return 0;
-    return i + 1;
+        return i + 1;
 }
 
 bool tol(const double& x, const double& y) {
     if (abs(x - y) < 1e-5) return true;
-    return false;
+        return false;
 }
 
 class Point {
 public:
-    double x, y;
-    Point() { x = 0; y = 0;}
-    Point(double xx,double yy):x(xx),y(yy) {}
+    double x, y ,z;
+    Point() { x = 0; y = 0; z = 0;}
+    Point(double xx,double yy, double zz ):x(xx),y(yy), z(zz) {}
+
     Point operator+(const Point& P) const {
-        return Point(x + P.x, y + P.y);
+        return Point(x + P.x, y + P.y, z + P.z);
     }
+
     Point operator-(const Point& P) const {
-        return Point(x - P.x, y - P.y);
+        return Point(x - P.x, y - P.y, z - P.z);
     }
+
     double operator*(const Point& P) const {
         return x*P.y - y*P.x;
     }
@@ -53,15 +53,16 @@ typedef vector<Point> Points;
 class Face {
 public:
     int P[3];
-
+    Point normal;
     bool checkXAxisIntersection(const Point& P0, const Points& p) const {
         return P0.xSegment(p[P[0]], p[P[1]]) == 1 && P0.xSegment(p[P[1]], p[P[2]]) == 1;
     }
+
     bool checkYAxisIntersection(const Point& P0, const Points& p) const  {
         return P0.ySegment(p[P[0]], p[P[1]]) == 1 && P0.ySegment(p[P[1]], p[P[2]]) == 1;
     }
 
-    int PMC_cross_product_test(const Point& P0, const Points& p) const {
+    int PMCz_cross_product_test(const Point& P0, const Points& p) const {
         double area[3];
         for (size_t i = 0; i < 3; i++) {
             const Point& Pi = p[P[i]];
@@ -76,44 +77,55 @@ public:
         return -1;
     }
 
-    int PMC(const Point P0, const Points& p) const {
+    int zIntercept(const Point P0, const Points& p) const {
+        const Point& Pref = p[P[0]] - P0;
+        double z = normal.z * (normal.x * Pref.x + normal.y * Pref.y + normal.z * Pref.z);
+        if (z > 0) return 1;
+        if (z < 0) return -1;
+        return 2;
+    }
+    int PMCz(const Point P0, const Points& p) const {
         //Most faces would resolve in the axis in tersection tests.
-        if (checkXAxisIntersection(P0, p)) return 1;
-        if (checkYAxisIntersection(P0, p)) return 1;
+        if (checkXAxisIntersection(P0, p)) return 0;
+        if (checkYAxisIntersection(P0, p)) return 0;
 
         // check Axis was inconclusive, returning cross product test
-        return PMC_cross_product_test(P0, p);
+        if (PMCz_cross_product_test(P0, p) == 1 ) return 0;
+
+        return zIntercept(P0, p);
     }
 };
 
 typedef vector<Face> Faces;
 #include <execution>
-bool PMC(const Faces& faces, const Points& points, const Point& P) {
-    bool isOutside = true;
+int PMC( const Faces& faces, const Points& points, const Point& P ) {
+    int z_positve = 0, z_negative = 0;
+    bool notOnBody = true;
     std::for_each(
-        std::execution::par_unseq,
         faces.begin(),
         faces.end(),
-        [&P, &points, &isOutside] ( const Face& face) {
-            if (isOutside && face.PMC(P, points) == 1)
-                isOutside = false;
+        [&P, &points, &z_positve, &z_negative, &notOnBody] ( const Face& face) {
+            if (notOnBody) {
+                auto res = face.PMCz(P, points);
+                if (res == 2)                    notOnBody = false;
+                if (res == 1)                    z_positve++;
+                if (res == -1)                   z_negative++;
+            }
         });
 
-    return !isOutside;
+    if (!notOnBody) return 0;
+    if (z_positve % 2 == 1) return -1;
+    return 1;
 }
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Faces faces;
+    Points points;
+    Point P(0, 0, 0);
+    auto res = PMC(faces, points, P);
+    if (res == 1) cout << "Outside the body";
+    if (res == 0) cout << "On the body";
+    if (res == 1) cout << "Inside the body";
+    return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
