@@ -2,6 +2,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <execution>
+
 using namespace std;
 
 int next(const int& i) {
@@ -97,11 +99,12 @@ public:
 };
 
 typedef vector<Face> Faces;
-#include <execution>
 int PMC( const Faces& faces, const Points& points, const Point& P ) {
-    int z_positve = 0, z_negative = 0;
+    std::atomic<int> z_positve = 0, z_negative = 0;
     bool notOnBody = true;
+
     std::for_each(
+        std::execution::par_unseq,
         faces.begin(),
         faces.end(),
         [&P, &points, &z_positve, &z_negative, &notOnBody] ( const Face& face) {
@@ -123,6 +126,7 @@ int main()
     Faces faces;
     Points points;
     Point P(0, 0, 0);
+    
     auto res = PMC(faces, points, P);
     if (res == 1) cout << "Outside the body";
     if (res == 0) cout << "On the body";
