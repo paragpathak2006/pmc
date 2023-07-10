@@ -91,7 +91,7 @@ typedef vector<Face> Faces;
 bool PMC(const Faces& faces, const Points& points, const Point& P) {
     bool isOutside = true;
     std::for_each(
-        std::execution::par,
+        std::execution::par_unseq,
         faces.begin(),
         faces.end(),
         [&P, &points, &isOutside] ( const Face& face) {
