@@ -9,4 +9,4 @@ This can be performed using a ray intersection method in which rays are parallel
 ## Time complexity
 The time complexity of the operation is average case O(1) when using a 2D space map data structure to store faces.
 
-![Space map](https://github.com/paragpathak2006/pmc/assets/31978917/dc4bf23f-98b2-4817-a811-5ca06f4afaef)
+![space map](https://github.com/paragpathak2006/pmc/assets/31978917/9ec036a2-e23f-4409-a18d-8e86bcf129be)
